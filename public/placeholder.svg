@@ -1,0 +1,24 @@
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Under construction illustration</title>
+  <desc id="desc">Minimal illustration of a crane and worker.</desc>
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#131D60" />
+      <stop offset="100%" stop-color="#F0AD4E" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" rx="24" fill="#0f172a" />
+  <path d="M40 250 L360 250" stroke="#1d253d" stroke-width="6" stroke-linecap="round" />
+  <rect x="80" y="80" width="40" height="170" fill="#131d60" />
+  <rect x="120" y="110" width="200" height="20" fill="url(#grad)" />
+  <rect x="120" y="140" width="160" height="16" fill="#1d253d" />
+  <rect x="120" y="170" width="120" height="16" fill="#1d253d" opacity="0.6" />
+  <rect x="120" y="200" width="80" height="16" fill="#1d253d" opacity="0.4" />
+  <circle cx="320" cy="210" r="40" fill="#f0ad4e" opacity="0.25" />
+  <path d="M300 230 L300 200 L320 180 L340 200 L340 230" fill="#f0ad4e" opacity="0.6" />
+  <rect x="280" y="230" width="80" height="20" rx="10" fill="url(#grad)" />
+  <circle cx="200" cy="40" r="24" fill="#f8fafc" opacity="0.25" />
+  <path d="M200 16 L200 80" stroke="#f0ad4e" stroke-width="4" stroke-linecap="round" />
+  <path d="M160 60 L240 60" stroke="#f0ad4e" stroke-width="4" stroke-linecap="round" />
+</svg>
+
