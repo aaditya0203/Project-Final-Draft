@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { CloudUpload, CheckCircle2 } from 'lucide-react';
+import { CloudUpload, CheckCircle2, Camera } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
+import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,9 +55,42 @@ export function UploadSection({ onUploadComplete, existingProjectId, existingPro
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
-        accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.webp'] },
+        accept: {
+            'image/jpeg': ['.jpeg', '.jpg'],
+            'image/png': ['.png'],
+            'image/webp': ['.webp']
+        },
         multiple: true,
     });
+
+    // Check if running on mobile
+    const isMobile = Capacitor.isNativePlatform();
+
+    // Camera capture function
+    const takePicture = async () => {
+        try {
+            const image = await CapacitorCamera.getPhoto({
+                quality: 90,
+                allowEditing: false,
+                resultType: CameraResultType.DataUrl,
+                source: CameraSource.Camera,
+            });
+
+            // Convert base64 to File
+            if (image.dataUrl) {
+                const response = await fetch(image.dataUrl);
+                const blob = await response.blob();
+                const file = new File([blob], `camera-${Date.now()}.${image.format}`, {
+                    type: `image/${image.format}`,
+                });
+                setSelectedFiles(prev => [...prev, file]);
+                toast.success('Photo captured successfully');
+            }
+        } catch (error) {
+            console.error('Camera error:', error);
+            toast.error('Failed to capture photo');
+        }
+    };
 
     const removeFile = (index: number) => {
         setSelectedFiles(prev => prev.filter((_, i) => i !== index));
@@ -74,7 +109,8 @@ export function UploadSection({ onUploadComplete, existingProjectId, existingPro
         setProgress(0);
         try {
             // Create project if needed
-            let currentProjectId = projectId;
+            let currentProjectId = existingProjectId ? String(existingProjectId) : projectId;
+
             if (!currentProjectId) {
                 const projectResponse = await api.createProject({
                     name: projectName,
@@ -191,10 +227,25 @@ export function UploadSection({ onUploadComplete, existingProjectId, existingPro
                                 </p>
                             </div>
                             <p className="text-xs text-muted-foreground bg-white/5 px-3 py-1 rounded-full">
-                                Supports: JPG, PNG, WEBP (Max 10MB)
+                                Supports: JPG, JPEG, PNG, WEBP (Max 10MB)
                             </p>
                         </div>
                     </div>
+
+                    {/* Camera Button - Show only on mobile */}
+                    {isMobile && (
+                        <div className="flex justify-center">
+                            <Button
+                                variant="outline"
+                                onClick={takePicture}
+                                disabled={uploading}
+                                className="w-full max-w-xs border-primary/50 hover:bg-primary/10"
+                            >
+                                <Camera className="mr-2 h-5 w-5" />
+                                Take Photo with Camera
+                            </Button>
+                        </div>
+                    )}
 
                     {/* Selected Files */}
                     {selectedFiles.length > 0 && (

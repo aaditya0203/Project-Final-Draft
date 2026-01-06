@@ -4,6 +4,7 @@ import { defineConfig } from "vite"
 
 export default defineConfig({
   plugins: [react()],
+  base: './', // Use relative paths for Capacitor
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

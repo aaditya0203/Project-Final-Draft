@@ -56,17 +56,43 @@ function loadDataset(csvFilePath, targetCol) {
   return { features, targets, featureCols };
 }
 
-const { features, targets, featureCols } = loadDataset(csvPath, targetColumn);
+// Shuffle data
+function shuffleData(features, targets) {
+  let indices = features.map((_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  return {
+    features: indices.map(i => features[i]),
+    targets: indices.map(i => targets[i])
+  };
+}
 
-// Create a tf.data.Dataset for batching using a generator
-function* dataGenerator() {
-  for (let i = 0; i < features.length; i++) {
-    const xs = tf.tensor1d(features[i]);
-    const ys = tf.tensor1d([targets[i]]);
+const { features: allFeatures, targets: allTargets, featureCols } = loadDataset(csvPath, targetColumn);
+
+// Split 80-20
+const shuffled = shuffleData(allFeatures, allTargets);
+const splitIdx = Math.floor(shuffled.features.length * 0.8);
+
+const trainFeatures = shuffled.features.slice(0, splitIdx);
+const trainTargets = shuffled.targets.slice(0, splitIdx);
+const testFeatures = shuffled.features.slice(splitIdx);
+const testTargets = shuffled.targets.slice(splitIdx);
+
+console.log(`\n✂️  Data Split:`);
+console.log(`   Train: ${trainFeatures.length} samples`);
+console.log(`   Test:  ${testFeatures.length} samples`);
+
+// Create a tf.data.Dataset for training
+function* trainDataGenerator() {
+  for (let i = 0; i < trainFeatures.length; i++) {
+    const xs = tf.tensor1d(trainFeatures[i]);
+    const ys = tf.tensor1d([trainTargets[i]]);
     yield { xs, ys };
   }
 }
-const ds = tf.data.generator(dataGenerator).batch(32);
+const trainDs = tf.data.generator(trainDataGenerator).batch(32);
 
 // ---------- 3️⃣ Build a simple regression model ----------
 function createModel(inputDim) {
@@ -90,7 +116,7 @@ async function train() {
   console.log(`📐 Model architecture: ${inputDim} → 64 → 32 → 1`);
   console.log('─'.repeat(50));
 
-  await model.fitDataset(ds, {
+  await model.fitDataset(trainDs, {
     epochs: 20,
     callbacks: {
       onEpochEnd: async (epoch, logs) => {
@@ -102,6 +128,44 @@ async function train() {
   });
 
   console.log('─'.repeat(50));
+
+  // ---------- 4️⃣ Evaluate on Test Set ----------
+  console.log('\n🧪 Evaluating on Test Set...');
+
+  const testTensor = tf.tensor2d(testFeatures);
+  const predictions = model.predict(testTensor);
+  const predData = await predictions.data();
+
+  let totalMse = 0;
+  let totalMae = 0;
+
+  // Calculate metrics manually for clarity
+  for (let i = 0; i < testTargets.length; i++) {
+    const actual = testTargets[i];
+    const pred = predData[i];
+    const diff = actual - pred;
+    totalMse += diff * diff;
+    totalMae += Math.abs(diff);
+  }
+
+  const mse = totalMse / testTargets.length;
+  const mae = totalMae / testTargets.length;
+  const rmse = Math.sqrt(mse);
+
+  console.log(`📊 Test Results:`);
+  console.log(`   MSE (Mean Squared Error): ${mse.toFixed(4)}`);
+  console.log(`   RMSE (Root Mean Squared Error): ${rmse.toFixed(4)}`);
+  console.log(`   MAE (Mean Absolute Error): ${mae.toFixed(4)}`);
+
+  // Show a few examples
+  console.log('\n🔍 Sample Predictions vs Actual:');
+  for (let i = 0; i < Math.min(5, testTargets.length); i++) {
+    console.log(`   Actual: ${testTargets[i].toFixed(2)} | Pred: ${predData[i].toFixed(2)} | Diff: ${(predData[i] - testTargets[i]).toFixed(2)}`);
+  }
+
+  testTensor.dispose();
+  predictions.dispose();
+
   const outDir = path.resolve('model');
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });
@@ -109,10 +173,9 @@ async function train() {
 
   // Save model weights as JSON (browser TensorFlow.js compatible)
   const modelJSON = await model.toJSON();
-  const weightsData = await model.getWeights();
 
   fs.writeFileSync(path.join(outDir, 'model.json'), JSON.stringify(modelJSON, null, 2));
-  console.log(`✅ Model architecture saved to: ${path.join(outDir, 'model.json')}`);
+  console.log(`\n✅ Model architecture saved to: ${path.join(outDir, 'model.json')}`);
 }
 
 train().catch(err => {

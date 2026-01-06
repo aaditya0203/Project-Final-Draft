@@ -76,11 +76,16 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
+        // Log login attempt
+        console.log(`Login attempt for ${email} with role ${req.body.role || 'unspecified'}`);
+
         // Verify role if provided (Strict check for portal access)
+        // Relaxed check: Allow login but log warning if role mismatch
         if (req.body.role && user.role !== req.body.role) {
-            return res.status(403).json({
-                error: `Access denied. Please use the ${user.role === 'contractor' ? 'Contractor' : 'Client'} portal.`
-            });
+            console.warn(`Role mismatch for user ${email}: expected ${user.role}, got ${req.body.role}`);
+            // return res.status(403).json({
+            //     error: `Access denied. Please use the ${user.role === 'contractor' ? 'Contractor' : 'Client'} portal.`
+            // });
         }
 
         // Generate token

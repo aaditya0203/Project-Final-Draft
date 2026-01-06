@@ -8,6 +8,11 @@ const router = express.Router();
 // Create new project
 router.post('/', authenticateToken, async (req, res) => {
     try {
+        // Restrict contractors from creating projects
+        if (req.user.role === 'contractor') {
+            return res.status(403).json({ error: 'Contractors are not allowed to create projects' });
+        }
+
         const { name, stage, location, description } = req.body;
         const userId = req.user.id;
 

@@ -1,4 +1,6 @@
-const API_BASE_URL = 'http://localhost:3002/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
+
+console.log('API Base URL:', API_BASE_URL);
 
 class ApiClient {
     private token: string | null = null;
@@ -26,15 +28,24 @@ class ApiClient {
         if (this.token) {
             (headers as any)['Authorization'] = `Bearer ${this.token}`;
         }
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-            ...options,
-            headers,
-        });
-        if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`Request failed: ${response.status} ${errText}`);
+
+        const url = `${API_BASE_URL}${endpoint}`;
+        try {
+            console.log(`[API] Requesting: ${url}`);
+            const response = await fetch(url, {
+                ...options,
+                headers,
+            });
+            if (!response.ok) {
+                const errText = await response.text();
+                console.error(`API Error (${response.status}):`, errText);
+                throw new Error(`Request failed: ${response.status} ${errText}`);
+            }
+            return response.json();
+        } catch (error) {
+            console.error('Fetch error details:', error);
+            throw error;
         }
-        return response.json();
     }
 
     // Auth endpoints
@@ -147,6 +158,14 @@ class ApiClient {
     async deleteImage(imageId: string) {
         return this.request(`/images/${imageId}`, {
             method: 'DELETE',
+        });
+    }
+
+    // Compare two images
+    async compareImages(image1Id: string, image2Id: string) {
+        return this.request('/images/compare', {
+            method: 'POST',
+            body: JSON.stringify({ image1Id, image2Id }),
         });
     }
 

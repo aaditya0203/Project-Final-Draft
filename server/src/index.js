@@ -82,7 +82,11 @@ async function startServer() {
 
         // Pre-load AI model
         console.log('🤖 Loading AI model...');
-        await imageAnalysis.loadModel();
+        try {
+            await imageAnalysis.loadModel();
+        } catch (err) {
+            console.warn('⚠️ Failed to load AI model (running in fallback mode):', err.message);
+        }
 
         // Start server
         app.listen(PORT, () => {

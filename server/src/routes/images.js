@@ -5,6 +5,8 @@ import imageAnalysis from '../services/imageAnalysis.js';
 import { authenticateToken } from '../middleware/auth.js';
 import path from 'path';
 import { promises as fs } from 'fs';
+import sharp from 'sharp';
+import ssimjs from 'ssim.js';
 
 const router = express.Router();
 
@@ -178,6 +180,80 @@ router.delete('/:imageId', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Delete image error:', error);
         res.status(500).json({ error: 'Failed to delete image' });
+    }
+});
+
+// Compare two images using SSIM
+router.post('/compare', authenticateToken, async (req, res) => {
+    try {
+        const { image1Id, image2Id } = req.body;
+
+        if (!image1Id || !image2Id) {
+            return res.status(400).json({ error: 'Both image1Id and image2Id are required' });
+        }
+
+        const img1 = await db.getImageById(image1Id);
+        const img2 = await db.getImageById(image2Id);
+
+        if (!img1 || !img2) {
+            return res.status(404).json({ error: 'One or both images not found' });
+        }
+
+        // Verify ownership (check project ownership for both)
+        const project1 = await db.getProjectById(img1.project_id);
+        const project2 = await db.getProjectById(img2.project_id);
+
+        if (project1.user_id !== req.user.id || project2.user_id !== req.user.id) {
+            // Allow contractors to view/compare if they have access (simplified: if they are contractor)
+            if (req.user.role !== 'contractor') {
+                return res.status(403).json({ error: 'Access denied' });
+            }
+        }
+
+        console.log('Comparing images:', img1.file_path, img2.file_path);
+
+        const width = 512;
+        const height = 512;
+
+        const processImage = async (filePath) => {
+            try {
+                // Resolve the image file path relative to the project root or use absolute path if already absolute
+                const absolutePath = path.isAbsolute(filePath) ? filePath : path.resolve(process.cwd(), filePath);
+                console.log('Processing image at:', absolutePath);
+
+                const buffer = await fs.readFile(absolutePath);
+                const { data, info } = await sharp(buffer)
+                    .resize(width, height)
+                    .ensureAlpha()
+                    .raw()
+                    .toBuffer({ resolveWithObject: true });
+                return { data, width: info.width, height: info.height, channels: info.channels };
+            } catch (err) {
+                console.error('Error processing image:', filePath, err);
+                throw err;
+            }
+        };
+
+        const [data1, data2] = await Promise.all([
+            processImage(img1.file_path),
+            processImage(img2.file_path)
+        ]);
+
+        console.log('Images processed, calculating SSIM...');
+        const { mssim } = ssimjs.default(data1, data2);
+        console.log('SSIM calculated:', mssim);
+
+        res.json({
+            ssim: mssim,
+            similarity: `${(mssim * 100).toFixed(2)}%`,
+            message: 'Comparison complete',
+            image1: { id: img1.id, upload_date: img1.upload_date },
+            image2: { id: img2.id, upload_date: img2.upload_date }
+        });
+
+    } catch (error) {
+        console.error('Comparison error:', error);
+        res.status(500).json({ error: 'Failed to compare images', details: error.message });
     }
 });
 

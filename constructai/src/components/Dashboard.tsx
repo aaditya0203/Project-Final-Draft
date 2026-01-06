@@ -23,6 +23,7 @@ export function Dashboard({ projectData, onBack }: DashboardProps) {
     const [isCompareMode, setIsCompareMode] = useState(false);
     const [showSignOutDialog, setShowSignOutDialog] = useState(false);
     const [aiPredictions, setAiPredictions] = useState<{ score: number; time: number } | null>(null);
+    const [similarityResult, setSimilarityResult] = useState<any>(null);
 
     // If no project data is provided, show empty state
     if (!projectData) {
@@ -305,18 +306,41 @@ export function Dashboard({ projectData, onBack }: DashboardProps) {
                             </CardHeader>
                             <CardContent>
                                 {isCompareMode && selectedForComparison.length === 2 ? (
-                                    <div className="grid grid-cols-2 gap-4 h-[500px]">
-                                        {selectedForComparison.map((id) => {
-                                            const img = projectImages.find((i) => i.id === id);
-                                            return (
-                                                <div key={id} className="relative h-full rounded-lg overflow-hidden border border-border">
-                                                    <img src={api.getImageUrl(id)} alt="Comparison" className="w-full h-full object-contain bg-black/5" />
-                                                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 text-sm">
-                                                        {new Date(img?.created_at).toLocaleString()}
+                                    <div className="flex flex-col gap-4">
+                                        <div className="grid grid-cols-2 gap-4 h-[500px]">
+                                            {selectedForComparison.map((id) => {
+                                                const img = projectImages.find((i) => String(i.id) === String(id));
+                                                return (
+                                                    <div key={id} className="relative h-full rounded-lg overflow-hidden border border-border">
+                                                        <img src={api.getImageUrl(id)} alt="Comparison" className="w-full h-full object-contain bg-black/5" />
+                                                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 text-sm">
+                                                            {img?.upload_date ? new Date(img.upload_date).toLocaleString() : 'Date unknown'}
+                                                        </div>
                                                     </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="flex flex-col items-center justify-center mt-4">
+                                            <Button
+                                                onClick={async () => {
+                                                    try {
+                                                        const result = await api.compareImages(selectedForComparison[0], selectedForComparison[1]);
+                                                        setSimilarityResult(result);
+                                                        toast.success(`Similarity Score (SSIM): ${result.similarity}`);
+                                                    } catch (error: any) {
+                                                        toast.error('Comparison failed', { description: error.message });
+                                                    }
+                                                }}
+                                                className="w-full max-w-md"
+                                            >
+                                                Calculate Similarity (SSIM)
+                                            </Button>
+                                            {similarityResult && (
+                                                <div className="mt-2 text-center text-sm text-muted-foreground">
+                                                    SSIM: {similarityResult.ssim.toFixed(4)} ({similarityResult.similarity})
                                                 </div>
-                                            );
-                                        })}
+                                            )}
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="h-[500px] w-full rounded-md border p-4 overflow-y-auto">
@@ -341,7 +365,7 @@ export function Dashboard({ projectData, onBack }: DashboardProps) {
                                                         <input type="checkbox" checked={selectedForComparison.includes(image.id)} onChange={() => toggleImageSelection(image.id)} className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary" />
                                                     </div>
                                                     <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        {new Date(image.created_at).toLocaleDateString()}
+                                                        {new Date(image.upload_date).toLocaleDateString()}
                                                     </div>
                                                 </div>
                                             ))}
