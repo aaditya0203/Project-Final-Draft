@@ -1,0 +1,38 @@
+{
+    "name": "constructai-server",
+    "version": "1.0.0",
+    "description": "Backend server for ConstructAI - Construction monitoring with AI",
+    "main": "src/index.js",
+    "type": "module",
+    "scripts": {
+        "start": "node src/index.js",
+        "dev": "nodemon src/index.js",
+        "init-db": "node src/db/init.js"
+    },
+    "keywords": [
+        "construction",
+        "ai",
+        "image-analysis"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "@tensorflow-models/coco-ssd": "^2.2.3",
+        "@tensorflow-models/mobilenet": "^2.1.1",
+        "@tensorflow/tfjs": "^4.17.0",
+        "bcrypt": "^5.1.1",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.1",
+        "exceljs": "^4.4.0",
+        "express": "^4.18.2",
+        "jsonwebtoken": "^9.0.2",
+        "multer": "^1.4.5-lts.1",
+        "pdfkit": "^0.17.2",
+        "sharp": "^0.33.2",
+        "sqlite3": "^5.1.7",
+        "ssim.js": "^3.5.0"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.3"
+    }
+}
