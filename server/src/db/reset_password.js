@@ -14,7 +14,7 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
     }
 });
 
-const email = 'aaditya@constructify.com';
+const email = 'jaiswalaaditya322@gmail.com';
 const newPassword = 'password123';
 
 async function resetPassword() {
@@ -23,6 +23,17 @@ async function resetPassword() {
     db.run('UPDATE users SET password_hash = ? WHERE email = ?', [passwordHash, email], function (err) {
         if (err) {
             console.error('Error updating password:', err.message);
+        } else if (this.changes === 0) {
+            // User not found, let's insert them instead
+            db.run('INSERT INTO users (email, password_hash) VALUES (?, ?)', [email, passwordHash], function (err) {
+                if (err) {
+                    console.error('Error creating user:', err.message);
+                } else {
+                    console.log(`User created for ${email} with new password: ${newPassword}`);
+                }
+                db.close();
+            });
+            return;
         } else {
             console.log(`Password for ${email} updated to: ${newPassword}`);
             console.log(`Rows modified: ${this.changes}`);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CloudUpload, CheckCircle2, Camera } from 'lucide-react';
+import { CloudUpload, CheckCircle2, Camera, ArrowLeft } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
@@ -27,9 +27,10 @@ interface UploadSectionProps {
     onUploadComplete: (data: any) => void;
     existingProjectId?: string;
     existingProjectName?: string;
+    onBack?: () => void;
 }
 
-export function UploadSection({ onUploadComplete, existingProjectId, existingProjectName }: UploadSectionProps) {
+export function UploadSection({ onUploadComplete, existingProjectId, existingProjectName, onBack }: UploadSectionProps) {
     const [progress, setProgress] = useState(0);
     const [uploading, setUploading] = useState(false);
     const [projectName, setProjectName] = useState('');
@@ -192,13 +193,20 @@ export function UploadSection({ onUploadComplete, existingProjectId, existingPro
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <Card className="glass border-white/10 shadow-xl">
-                <CardHeader>
-                    <CardTitle className="text-2xl text-gradient-animated">
-                        {existingProjectName ? `Add Images to ${existingProjectName}` : 'Upload Construction Site Images'}
-                    </CardTitle>
-                    <CardDescription>
-                        Upload photos of your construction site for AI-powered progress analysis.
-                    </CardDescription>
+                <CardHeader className="flex flex-row items-center gap-4 space-y-0">
+                    {onBack && (
+                        <Button variant="ghost" size="icon" onClick={onBack} className="hover:bg-white/10 shrink-0">
+                            <ArrowLeft className="h-6 w-6" />
+                        </Button>
+                    )}
+                    <div>
+                        <CardTitle className="text-2xl text-gradient-animated">
+                            {existingProjectName ? `Add Images to ${existingProjectName}` : 'Upload Construction Site Images'}
+                        </CardTitle>
+                        <CardDescription>
+                            Upload photos of your construction site for AI-powered progress analysis.
+                        </CardDescription>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {/* Drag & Drop Zone */}

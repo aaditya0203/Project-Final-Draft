@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, FolderOpen, MapPin, Calendar, ArrowRight, Trash2 } from 'lucide-react';
+import { Search, FolderOpen, MapPin, Calendar, ArrowRight, Trash2, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,10 @@ import api from '@/services/api';
 
 interface ProjectsListProps {
     onSelectProject: (project: any) => void;
+    onBack?: () => void;
 }
 
-export function ProjectsList({ onSelectProject }: ProjectsListProps) {
+export function ProjectsList({ onSelectProject, onBack }: ProjectsListProps) {
     const [projects, setProjects] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(true);
@@ -66,11 +67,18 @@ export function ProjectsList({ onSelectProject }: ProjectsListProps) {
             transition={{ duration: 0.5 }}
         >
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-white">My Projects</h1>
-                    <p className="text-gray-300">
-                        View and manage all your construction projects
-                    </p>
+                <div className="flex items-center gap-4">
+                    {onBack && (
+                        <Button variant="ghost" size="icon" onClick={onBack} className="hover:bg-secondary/20">
+                            <ArrowLeft className="h-6 w-6" />
+                        </Button>
+                    )}
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight text-white">My Projects</h1>
+                        <p className="text-gray-300">
+                            View and manage all your construction projects
+                        </p>
+                    </div>
                 </div>
                 <div className="relative w-full md:w-80 group">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />

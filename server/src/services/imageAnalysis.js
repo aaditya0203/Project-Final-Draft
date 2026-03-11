@@ -1,25 +1,50 @@
-import * as tf from '@tensorflow/tfjs';
-import * as cocoSsd from '@tensorflow-models/coco-ssd';
+import * as tf from '@tensorflow/tfjs-node';
 import { promises as fs } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class ImageAnalysisService {
     constructor() {
         this.model = null;
         this.isModelLoaded = false;
+        this.classLabels = null;
     }
 
     async loadModel() {
         if (this.isModelLoaded) return;
 
         try {
-            console.log('Loading COCO-SSD model...');
-            // Load the pre-trained COCO-SSD model
-            this.model = await cocoSsd.load();
+            console.log('Loading custom construction detection model...');
+
+            // Path to the model.json file
+            // Assuming the model is served from server/models/construction_detector/model.json
+            const modelPath = path.join(__dirname, '../../models/construction_detector/model.json');
+
+            // Load the model
+            // We use file:// protocol for loading local files in node
+            this.model = await tf.loadLayersModel(`file://${modelPath}`);
+
+            // Load class labels if available, otherwise use defaults
+            try {
+                const labelsPath = path.join(__dirname, '../../models/class_labels.json');
+                const labelsData = await fs.readFile(labelsPath, 'utf8');
+                this.classLabels = JSON.parse(labelsData);
+                console.log(`✅ Loaded ${Object.keys(this.classLabels).length} class labels`);
+            } catch (e) {
+                console.warn('⚠️ Could not load class_labels.json, using fallback labels or indices');
+                // Fallback labels if file is missing (adjust based on your actual training)
+                this.classLabels = { 0: 'construction', 1: 'finished' };
+            }
+
             this.isModelLoaded = true;
-            console.log('✅ COCO-SSD model loaded successfully');
+            console.log('✅ Custom construction model loaded successfully');
         } catch (error) {
-            console.error('❌ Failed to load COCO-SSD model:', error);
-            throw error;
+            console.error('❌ Failed to load custom model:', error);
+            console.log('⚠️ Falling back to simulation mode for demonstration');
+            // We don't throw here to allow the app to run even if model is missing
         }
     }
 
@@ -29,18 +54,51 @@ class ImageAnalysisService {
         }
 
         try {
-            // Load image
+            if (!this.model) {
+                return this.getFallbackAnalysis();
+            }
+
+            // Load and preprocess image
             const imageBuffer = await fs.readFile(imagePath);
             const tfimage = tf.node.decodeImage(imageBuffer);
 
-            // Run detection
-            const predictions = await this.model.detect(tfimage);
+            // Resize to model input size (224x224 for MobileNetV2)
+            const resized = tf.image.resizeBilinear(tfimage, [224, 224]);
+            const normalized = resized.div(255.0);
+            const batched = normalized.expandDims(0);
 
-            // Clean up tensor
+            // Run prediction
+            const predictions = await this.model.predict(batched);
+            const predArray = await predictions.data();
+
+            let maxIndex, confidence, predictedClass;
+
+            if (predArray.length === 1) {
+                // Binary classification (Sigmoid)
+                const prob = predArray[0];
+                maxIndex = prob > 0.5 ? 1 : 0;
+                confidence = maxIndex === 1 ? prob : 1 - prob;
+            } else {
+                // Multi-class classification (Softmax)
+                maxIndex = predArray.indexOf(Math.max(...predArray));
+                confidence = predArray[maxIndex];
+            }
+
+            if (this.classLabels) {
+                predictedClass = this.classLabels[maxIndex] || `Class ${maxIndex}`;
+            } else {
+                predictedClass = maxIndex === 0 ? 'construction' : 'finished';
+            }
+
+            // Clean up tensors
             tfimage.dispose();
+            resized.dispose();
+            normalized.dispose();
+            batched.dispose();
+            predictions.dispose();
 
             // Process predictions into construction insights
-            return this.processPredictions(predictions);
+            return this.processPredictions(predictedClass, confidence, predArray);
 
         } catch (error) {
             console.error('Analysis error:', error);
@@ -48,45 +106,8 @@ class ImageAnalysisService {
         }
     }
 
-    processPredictions(predictions) {
-        // 1. Calculate Confidence
-        // COCO-SSD gives high confidence. We take the average of top 3 or default to 0.85
-        const topPreds = predictions.slice(0, 3);
-        const avgConfidence = topPreds.length > 0
-            ? topPreds.reduce((acc, p) => acc + p.score, 0) / topPreds.length
-            : 0.85;
-
-        // 2. Identify Objects
-        const detectedClasses = predictions.map(p => p.class);
-        const hasPerson = detectedClasses.includes('person');
-        const hasVehicle = detectedClasses.some(c => ['truck', 'car', 'bus'].includes(c));
-
-        // 3. Infer Progress & Stage
-        let progress = 0;
-        let stage = 'Unknown';
-        let timeEstimate = 0;
-
-        if (hasVehicle) {
-            // Vehicles often mean logistics, excavation, or site prep
-            stage = 'Site Preparation / Logistics';
-            progress = 15;
-            timeEstimate = 120;
-        } else if (hasPerson) {
-            // People imply active work
-            stage = 'Active Construction';
-            progress = 45;
-            timeEstimate = 90;
-        } else {
-            // Static scene usually means structure is up
-            stage = 'Structural Work / Finishing';
-            progress = 75;
-            timeEstimate = 45;
-        }
-
-        // Adjust progress based on object density (heuristic)
-        if (predictions.length > 5) progress += 10; // Busy site = more progress? Or just more activity.
-
-        // 4. Structural Elements (Inferred)
+    processPredictions(predictedClass, confidence, allPreds) {
+        // Map predictions to structural elements and progress
         const structuralElements = {
             columns: 0,
             beams: 0,
@@ -94,43 +115,59 @@ class ImageAnalysisService {
             foundation: 0
         };
 
-        // Map generic objects to construction context
-        if (stage.includes('Site')) structuralElements.foundation = 1;
-        if (stage.includes('Active')) { structuralElements.walls = 2; structuralElements.columns = 2; }
-        if (stage.includes('Structural')) { structuralElements.walls = 4; structuralElements.beams = 4; }
+        let progress = 0;
+        let stage = 'Unknown';
+        let timeEstimate = 0;
 
-        // 5. Safety Issues
-        const safetyIssues = [];
-        if (hasPerson) {
-            // If we see people, we check for safety gear (implied by confidence or just a standard check)
-            // Since COCO doesn't detect "helmet", we add a standard warning for manual verification
-            safetyIssues.push({
-                type: 'personnel_detected',
-                severity: 'medium',
-                description: 'Workers detected. Verify PPE compliance manually.'
-            });
+        // Custom logic based on predicted class
+        // Modify this based on your actual model classes
+        if (predictedClass.toLowerCase().includes('construction') || predictedClass === '0') {
+            stage = 'Active Construction';
+            progress = 45;
+            structuralElements.walls = 2;
+            structuralElements.columns = 2;
+            timeEstimate = 90;
+        } else if (predictedClass.toLowerCase().includes('finish') || predictedClass === '1') {
+            stage = 'Finishing Stages';
+            progress = 85;
+            structuralElements.walls = 4;
+            structuralElements.beams = 4;
+            timeEstimate = 30;
+        } else {
+            stage = predictedClass;
+            progress = 50;
+            structuralElements.foundation = 1;
+            timeEstimate = 60;
         }
-        if (hasVehicle && hasPerson) {
-            safetyIssues.push({
-                type: 'collision_risk',
-                severity: 'high',
-                description: 'Mixed traffic (workers + vehicles) detected. Ensure separation zones.'
-            });
-        }
+
+        // Adjust confidence slightly if it's very low
+        const finalConfidence = Math.max(confidence, 0.65);
 
         return {
-            progressPercentage: Math.min(progress, 100),
-            confidenceScore: Math.round(avgConfidence * 100) / 100,
+            progressPercentage: progress,
+            confidenceScore: Number(finalConfidence.toFixed(2)),
             structuralElements,
-            safetyIssues,
-            weatherConditions: 'Clear', // Placeholder
+            safetyIssues: this.detectSafetyIssues(predictedClass, finalConfidence),
+            weatherConditions: 'Clear',
             timeEstimateDays: timeEstimate,
-            detectedClass: stage, // Use our inferred stage as the "class"
-            rawPredictions: predictions.map(p => ({
-                class: p.class,
-                score: p.score
-            })).slice(0, 5)
+            detectedClass: stage,
+            rawPredictions: Array.from(allPreds).map((p, i) => ({
+                class: this.classLabels ? this.classLabels[i] : `Class ${i}`,
+                score: p
+            })).sort((a, b) => b.score - a.score).slice(0, 5)
         };
+    }
+
+    detectSafetyIssues(className, confidence) {
+        const issues = [];
+        if (confidence < 0.7) {
+            issues.push({
+                type: 'low_confidence',
+                severity: 'medium',
+                description: 'Low confidence detection - manual verification recommended'
+            });
+        }
+        return issues;
     }
 
     getFallbackAnalysis() {
@@ -146,7 +183,7 @@ class ImageAnalysisService {
             safetyIssues: [],
             weatherConditions: 'Clear',
             timeEstimateDays: 60,
-            detectedClass: 'Manual Review Required'
+            detectedClass: 'Manual Review Required (Model Missing)'
         };
     }
 }

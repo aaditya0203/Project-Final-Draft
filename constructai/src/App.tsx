@@ -6,27 +6,18 @@ import { Welcome } from '@/components/Welcome';
 import { Login } from '@/components/Login';
 import { Signup } from '@/components/Signup';
 import { ResetPassword } from '@/components/ResetPassword';
+import { About } from '@/components/About';
+import { TrainingPage } from '@/components/TrainingPage';
+import { Navbar } from '@/components/Navbar';
 // Removed unused Signout import
-import { Button } from '@/components/ui/button';
-import { HardHat } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthTransition } from '@/components/AuthTransition';
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import Chatbot from '@/components/Chatbot';
 
 function App() {
   const [view, setView] = useState<string>('welcome');
   const [isAuth, setIsAuth] = useState(false);
   const [projectData, setProjectData] = useState<any>(null);
-  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   // Check for reset password URL
   useState(() => {
@@ -54,7 +45,7 @@ function App() {
         location: fullProjectData.project.location,
         description: fullProjectData.project.description,
         updated: fullProjectData.latestAnalysis
-          ? new Date(fullProjectData.latestAnalysis.created_at).toLocaleString()
+          ? new Date(fullProjectData.latestAnalysis.analyzed_at).toLocaleString()
           : 'No analysis yet',
         progress: fullProjectData.latestAnalysis?.progress_percentage || 0,
         ssim: fullProjectData.latestAnalysis?.confidence_score || 0,
@@ -82,7 +73,7 @@ function App() {
     }
   };
 
-  const ensureAuth = (target: 'upload' | 'dashboard' | 'projects') => {
+  const ensureAuth = (target: 'upload' | 'projects') => {
     if (!isAuth) {
       setView('login');
     } else {
@@ -90,56 +81,11 @@ function App() {
     }
   };
 
-  // Signout handling moved to the button click handler directly
-
-  // Navbar component used for authenticated pages
-  const Navbar = (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 glass supports-[backdrop-filter]:bg-background/20">
-      <div className="container flex h-14 items-center justify-between">
-        <div className="flex items-center gap-2 font-bold cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setView('welcome')} role="button">
-          <div className="p-1.5 rounded-lg bg-primary/10 text-primary animate-pulse-glow">
-            <HardHat className="h-5 w-5" />
-          </div>
-          <span className="text-gradient font-extrabold">Constructify</span>
-        </div>
-        <nav className="flex items-center gap-4 text-sm font-medium">
-          {isAuth ? (
-            <Dialog open={showSignOutConfirm} onOpenChange={setShowSignOutConfirm}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" className={`hover:bg-primary/10 hover:text-primary transition-colors ${view === 'signout' ? 'bg-primary/10 text-primary' : ''}`}>Sign Out</Button>
-              </DialogTrigger>
-              <DialogContent className="glass border-white/10">
-                <DialogHeader>
-                  <DialogTitle>Sign Out</DialogTitle>
-                  <DialogDescription>
-                    Are you sure you want to sign out? You will need to log in again to access your projects.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowSignOutConfirm(false)} className="hover:bg-white/5">Cancel</Button>
-                  <Button variant="destructive" onClick={() => {
-                    setShowSignOutConfirm(false);
-                    // Handle signout directly
-                    setIsAuth(false);
-                    setProjectData(null);
-                    setView('welcome');
-                  }}>Sign Out</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          ) : (
-            <>
-              <Button variant="ghost" onClick={() => setView('login')} className="hover:bg-primary/10 hover:text-primary">Login</Button>
-              <Button variant="ghost" onClick={() => setView('signup')} className="hover:bg-primary/10 hover:text-primary">Sign Up</Button>
-            </>
-          )}
-          <Button variant="ghost" onClick={() => ensureAuth('projects')} className={`hover:bg-primary/10 hover:text-primary transition-colors ${view === 'projects' ? 'bg-primary/10 text-primary' : ''}`}>Projects</Button>
-          <Button variant="ghost" onClick={() => ensureAuth('upload')} className={`hover:bg-primary/10 hover:text-primary transition-colors ${view === 'upload' ? 'bg-primary/10 text-primary' : ''}`}>New Analysis</Button>
-          <Button variant="ghost" onClick={() => ensureAuth('dashboard')} className={`hover:bg-primary/10 hover:text-primary transition-colors ${view === 'dashboard' ? 'bg-primary/10 text-primary' : ''}`}>Dashboard</Button>
-        </nav>
-      </div>
-    </header>
-  );
+  const handleLogout = () => {
+    setIsAuth(false);
+    setProjectData(null);
+    setView('welcome');
+  };
 
   const AuthenticatedLayout = ({ children, viewKey }: { children: React.ReactNode, viewKey: string }) => (
     <div className="relative min-h-screen w-full overflow-hidden bg-background gradient-animated font-sans text-foreground antialiased">
@@ -147,8 +93,21 @@ function App() {
       <div className="absolute -left-[15%] -top-[15%] h-[600px] w-[600px] rounded-full bg-primary/10 blur-[120px] animate-float pointer-events-none" />
       <div className="absolute -bottom-[15%] -right-[15%] h-[600px] w-[600px] rounded-full bg-secondary/10 blur-[120px] animate-float pointer-events-none" />
 
-      {Navbar}
-      <main className="container relative z-10 py-8">
+      <Navbar
+        currentView={view}
+        isAuthenticated={isAuth}
+        onNavigate={(v) => {
+          if (['projects', 'upload'].includes(v)) {
+            ensureAuth(v as any);
+          } else {
+            setView(v);
+          }
+        }}
+        onLogout={handleLogout}
+        className="relative z-50"
+      />
+
+      <main className="w-full px-4 sm:px-6 lg:px-8 relative z-10 py-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={viewKey}
@@ -156,6 +115,7 @@ function App() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
+            className="w-full"
           >
             {children}
           </motion.div>
@@ -168,7 +128,19 @@ function App() {
     <AnimatePresence mode="wait">
       {view === 'welcome' && (
         <AuthTransition>
-          <Welcome onGetStarted={() => setView('login')} />
+          <Welcome
+            onGetStarted={() => setView('login')}
+            currentView={view}
+            isAuthenticated={isAuth}
+            onNavigate={(v) => {
+              if (['projects', 'upload'].includes(v)) {
+                ensureAuth(v as any);
+              } else {
+                setView(v);
+              }
+            }}
+            onLogout={handleLogout}
+          />
         </AuthTransition>
       )}
       {view === 'login' && (
@@ -179,6 +151,7 @@ function App() {
               setView('projects');
             }}
             onSwitchToSignup={() => setView('signup')}
+            onBack={() => setView('welcome')}
           />
         </AuthTransition>
       )}
@@ -190,6 +163,7 @@ function App() {
               setView('projects');
             }}
             onSwitchToLogin={() => setView('login')}
+            onBack={() => setView('welcome')}
           />
         </AuthTransition>
       )}
@@ -208,14 +182,14 @@ function App() {
 
       {view === 'projects' && (
         <AuthenticatedLayout viewKey="projects">
-          <ProjectsList onSelectProject={handleSelectProject} />
+          <ProjectsList onSelectProject={handleSelectProject} onBack={() => setView('dashboard')} />
         </AuthenticatedLayout>
       )}
 
       {view === 'upload' && (
         <AuthenticatedLayout viewKey="upload">
           <div className="mx-auto max-w-4xl">
-            <UploadSection onUploadComplete={handleUploadComplete} />
+            <UploadSection onUploadComplete={handleUploadComplete} onBack={() => setView('dashboard')} />
           </div>
         </AuthenticatedLayout>
       )}
@@ -224,10 +198,27 @@ function App() {
         <AuthenticatedLayout viewKey="dashboard">
           <Dashboard
             projectData={projectData}
-            onBack={() => setView('projects')}
+            onBack={() => setView(isAuth ? 'projects' : 'welcome')}
           />
         </AuthenticatedLayout>
       )}
+
+      {view === 'about' && (
+        <AuthenticatedLayout viewKey="about">
+          <About onBack={() => setView('dashboard')} />
+        </AuthenticatedLayout>
+      )}
+
+      {view === 'training' && (
+        <AuthenticatedLayout viewKey="training">
+          <TrainingPage onBack={() => setView('dashboard')} />
+        </AuthenticatedLayout>
+      )}
+      <Chatbot
+        isAuthenticated={isAuth}
+        currentView={view}
+        projectData={projectData}
+      />
     </AnimatePresence>
   );
 }

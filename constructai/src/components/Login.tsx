@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, Loader2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -19,9 +19,10 @@ import { toast } from 'sonner';
 interface LoginProps {
     onLoginSuccess: () => void;
     onSwitchToSignup: () => void;
+    onBack?: () => void;
 }
 
-export function Login({ onLoginSuccess, onSwitchToSignup }: LoginProps) {
+export function Login({ onLoginSuccess, onSwitchToSignup, onBack }: LoginProps) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -80,8 +81,18 @@ export function Login({ onLoginSuccess, onSwitchToSignup }: LoginProps) {
             <div className="absolute -bottom-[15%] -right-[15%] h-[600px] w-[600px] rounded-full bg-secondary/10 blur-[120px] animate-float" />
 
             <div className="flex min-h-screen items-center justify-center px-4 py-12">
-                <div className="w-full max-w-md glass p-8 backdrop-blur-md border border-white/10 shadow-lg">
-                    <h2 className="mb-6 text-2xl font-bold text-center text-foreground">
+                <div className="w-full max-w-md glass p-8 backdrop-blur-md border border-white/10 shadow-lg relative">
+                    {onBack && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onBack}
+                            className="absolute left-4 top-4 text-muted-foreground hover:text-foreground"
+                        >
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                    )}
+                    <h2 className="mb-6 text-2xl font-bold text-center text-foreground mt-4">
                         {isContractor ? 'Contractor Portal' : 'Sign In to Constructify'}
                     </h2>
 

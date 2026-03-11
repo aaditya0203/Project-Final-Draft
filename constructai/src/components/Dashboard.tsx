@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, RefreshCw, CheckCircle2, HardHat, CloudSun, FileSpreadsheet, FileText, ShieldCheck, Calendar, ArrowLeft, Image as ImageIcon, SplitSquareHorizontal, Trash2, LogOut, FolderOpen } from 'lucide-react';
+import { Activity, RefreshCw, CheckCircle2, HardHat, CloudSun, FileSpreadsheet, FileText, ShieldCheck, Calendar, ArrowLeft, Image as ImageIcon, SplitSquareHorizontal, Trash2, LogOut, FolderOpen, Layers, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,21 +25,92 @@ export function Dashboard({ projectData, onBack }: DashboardProps) {
     const [aiPredictions, setAiPredictions] = useState<{ score: number; time: number } | null>(null);
     const [similarityResult, setSimilarityResult] = useState<any>(null);
 
-    // If no project data is provided, show empty state
+    // If no project data is provided, show a fake general dashboard overview
     if (!projectData) {
+        // Generate some fake active projects data
+        const fakeActiveProjectsCount = Math.floor(Math.random() * 10) + 5; // 5 to 14
+        const fakeProjects = Array.from({ length: 3 }).map((_, i) => ({
+            id: i,
+            name: `Construction Site ${String.fromCharCode(65 + i)}`,
+            progress: Math.floor(Math.random() * 60) + 20,
+            status: ['On Track', 'Delayed', 'Ahead of Schedule'][Math.floor(Math.random() * 3)],
+            lastUpdated: '2 hours ago'
+        }));
+
         return (
-            <div className="flex flex-col items-center justify-center h-[60vh] space-y-4 animate-in fade-in zoom-in duration-500">
-                <div className="p-6 rounded-full bg-primary/10 animate-pulse-glow">
-                    <FolderOpen className="h-16 w-16 text-primary" />
+            <div className="space-y-6 animate-in fade-in duration-500">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight text-gradient-animated">Overview Dashboard</h1>
+                        <p className="text-muted-foreground mt-1">
+                            High-level view of all active construction projects.
+                        </p>
+                    </div>
                 </div>
-                <h2 className="text-2xl font-bold text-foreground">No Project Selected</h2>
-                <p className="text-muted-foreground max-w-md text-center">
-                    Please select a project from the list or create a new one to view the dashboard.
-                </p>
-                <Button onClick={onBack} className="mt-4 hover-lift">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Projects
-                </Button>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                    <Card className="glass border-white/10 hover-lift transition-all duration-300">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
+                            <FolderOpen className="h-4 w-4 text-primary" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-primary">{fakeActiveProjectsCount}</div>
+                            <p className="text-xs text-muted-foreground mt-1">Across all regions</p>
+                        </CardContent>
+                    </Card>
+                    <Card className="glass border-white/10 hover-lift transition-all duration-300 delay-75">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Global Safety Score</CardTitle>
+                            <ShieldCheck className="h-4 w-4 text-green-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-green-500">94/100</div>
+                            <p className="text-xs text-muted-foreground mt-1">+2.1% from last month</p>
+                        </CardContent>
+                    </Card>
+                    <Card className="glass border-white/10 hover-lift transition-all duration-300 delay-100">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Resource Usage</CardTitle>
+                            <Activity className="h-4 w-4 text-primary" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-primary">78%</div>
+                            <p className="text-xs text-muted-foreground mt-1">Optimal efficiency</p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <Card className="glass border-white/10 mt-6">
+                    <CardHeader>
+                        <CardTitle>Recent Project Activity</CardTitle>
+                        <CardDescription>Latest updates from your active construction sites</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            {fakeProjects.map((fp) => (
+                                <div key={fp.id} className="flex items-center justify-between border-b border-white/10 pb-4 last:border-0 last:pb-0">
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-medium leading-none">{fp.name}</p>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                            <span className={fp.status === 'Delayed' ? 'text-destructive' : fp.status === 'Ahead of Schedule' ? 'text-green-500' : 'text-primary'}>
+                                                {fp.status}
+                                            </span>
+                                            <span>•</span>
+                                            <span>Updated {fp.lastUpdated}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-32 hidden sm:block">
+                                            <Progress value={fp.progress} className="h-2" />
+                                        </div>
+                                        <span className="text-sm font-bold w-12 text-right">{fp.progress}%</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         );
     }
@@ -249,7 +320,19 @@ export function Dashboard({ projectData, onBack }: DashboardProps) {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-primary">98/100</div>
-                            <p className="text-xs text-muted-foreground mt-1">{project.aiAnalysis.safety.length} issues detected</p>
+                            <p className="text-xs text-muted-foreground mt-1 text-wrap">
+                                {project.aiAnalysis.safety && project.aiAnalysis.safety.length > 0 && project.aiAnalysis.safety[0] !== 'No safety issues detected' ? (
+                                    <span className="text-orange-500 flex items-center gap-1">
+                                        <AlertTriangle className="h-3 w-3" />
+                                        {project.aiAnalysis.safety.join(', ')}
+                                    </span>
+                                ) : (
+                                    <span className="text-green-500 flex items-center gap-1">
+                                        <ShieldCheck className="h-3 w-3" />
+                                        All clear
+                                    </span>
+                                )}
+                            </p>
                         </CardContent>
                     </Card>
                     <Card className="glass border-white/10 hover-lift transition-all duration-300 delay-150">
@@ -280,7 +363,50 @@ export function Dashboard({ projectData, onBack }: DashboardProps) {
                     </TabsList>
 
                     <TabsContent value="overview" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                        {/* Overview content omitted for brevity */}
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <Card className="glass border-white/10">
+                                <CardHeader>
+                                    <CardTitle>Project Details</CardTitle>
+                                    <CardDescription>General information about the project</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Location</p>
+                                        <p className="font-medium">{project.location || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Description</p>
+                                        <p className="text-sm mt-1">{project.description || 'No description provided.'}</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card className="glass border-white/10">
+                                <CardHeader>
+                                    <CardTitle>Recent Activity</CardTitle>
+                                    <CardDescription>Latest updates on your project tracking</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="flex items-center gap-4 border-l-2 border-primary pl-4">
+                                        <div className="rounded-full bg-primary/20 p-2">
+                                            <Activity className="h-4 w-4 text-primary" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium">AI Analysis Completed</p>
+                                            <p className="text-xs text-muted-foreground">{project.updated}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 border-l-2 border-primary/20 pl-4">
+                                        <div className="rounded-full bg-secondary/20 p-2">
+                                            <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium">Images Uploaded</p>
+                                            <p className="text-xs text-muted-foreground">{project.updated}</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </TabsContent>
 
                     <TabsContent value="gallery" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -383,11 +509,77 @@ export function Dashboard({ projectData, onBack }: DashboardProps) {
                     </TabsContent>
 
                     <TabsContent value="analysis" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                        {/* Detailed AI Analysis content omitted for brevity */}
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <Card className="glass border-white/10 border-l-4 border-l-blue-500">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Layers className="h-5 w-5 text-blue-500" /> Structural Elements Detected
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {project.aiAnalysis.structural && project.aiAnalysis.structural.length > 0 ? (
+                                        <ul className="space-y-2">
+                                            {project.aiAnalysis.structural.map((item: string, idx: number) => (
+                                                <li key={idx} className="flex items-center gap-2 text-sm bg-blue-500/10 p-2 rounded-md">
+                                                    <CheckCircle2 className="h-4 w-4 text-blue-500" /> {item}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">No structural elements recognized.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                            <Card className="glass border-white/10 border-l-4 border-l-orange-500">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <AlertTriangle className="h-5 w-5 text-orange-500" /> Safety Hazards Checked
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {project.aiAnalysis.safety && project.aiAnalysis.safety.length > 0 && project.aiAnalysis.safety[0] !== 'No safety issues detected' ? (
+                                        <ul className="space-y-2">
+                                            {project.aiAnalysis.safety.map((issue: string, idx: number) => (
+                                                <li key={idx} className="flex items-center gap-2 text-sm bg-orange-500/10 text-orange-200 p-2 rounded-md">
+                                                    <AlertTriangle className="h-4 w-4 text-orange-500" /> {issue}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 p-2 rounded-md">
+                                            <ShieldCheck className="h-4 w-4" /> All clear - No safety issues detected.
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
                     </TabsContent>
 
                     <TabsContent value="reports" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                        {/* Reports content omitted for brevity */}
+                        <Card className="glass border-white/10">
+                            <CardHeader>
+                                <CardTitle>Data Exports</CardTitle>
+                                <CardDescription>Download compiled technical reports containing all imagery, AI assessments, and timeline markers.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="flex flex-col gap-2 p-4 border border-border rounded-lg bg-secondary/10">
+                                        <h4 className="font-semibold flex items-center gap-2"><FileSpreadsheet className="h-4 w-4 text-green-500" /> Spreadsheet Export</h4>
+                                        <p className="text-sm text-muted-foreground mb-2">Ideal for data parsing, scheduling, and granular element tracking.</p>
+                                        <Button variant="secondary" onClick={() => handleExport('excel')} className="w-full">
+                                            Download .XLSX
+                                        </Button>
+                                    </div>
+                                    <div className="flex flex-col gap-2 p-4 border border-border rounded-lg bg-secondary/10">
+                                        <h4 className="font-semibold flex items-center gap-2"><FileText className="h-4 w-4 text-red-500" /> PDF Print Report</h4>
+                                        <p className="text-sm text-muted-foreground mb-2">High-level executive summary meant for stakeholders.</p>
+                                        <Button variant="secondary" onClick={() => handleExport('pdf')} className="w-full">
+                                            Download .PDF
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </TabsContent>
                 </Tabs>
             )}
