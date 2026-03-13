@@ -4,6 +4,9 @@
     "description": "Backend server for ConstructAI - Construction monitoring with AI",
     "main": "src/index.js",
     "type": "module",
+    "engines": {
+        "node": "20.x"
+    },
     "scripts": {
         "start": "node src/index.js",
         "dev": "nodemon src/index.js",
