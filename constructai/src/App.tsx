@@ -198,6 +198,7 @@ function App() {
         <AuthenticatedLayout viewKey="dashboard">
           <Dashboard
             projectData={projectData}
+            isAuthenticated={isAuth}
             onBack={() => setView(isAuth ? 'projects' : 'welcome')}
           />
         </AuthenticatedLayout>
