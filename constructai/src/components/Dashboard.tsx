@@ -27,95 +27,29 @@ export function Dashboard({ projectData, onBack }: DashboardProps) {
 
     // If no project data is provided, show a fake general dashboard overview
     if (!projectData) {
-        // Generate some fake active projects data
-        const fakeActiveProjectsCount = Math.floor(Math.random() * 10) + 5; // 5 to 14
-        const fakeProjects = Array.from({ length: 3 }).map((_, i) => ({
-            id: i,
-            name: `Construction Site ${String.fromCharCode(65 + i)}`,
-            progress: Math.floor(Math.random() * 60) + 20,
-            status: ['On Track', 'Delayed', 'Ahead of Schedule'][Math.floor(Math.random() * 3)],
-            lastUpdated: '2 hours ago'
-        }));
-
         return (
-            <div className="space-y-6 animate-in fade-in duration-500">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-gradient-animated">Overview Dashboard</h1>
-                        <p className="text-muted-foreground mt-1">
-                            High-level view of all active construction projects.
-                        </p>
-                    </div>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-in fade-in duration-500">
+                <div className="p-6 rounded-full bg-primary/10 animate-float">
+                    <FolderOpen className="h-16 w-16 text-primary" />
                 </div>
-
-                <div className="grid gap-4 md:grid-cols-3">
-                    <Card className="glass border-white/10 hover-lift transition-all duration-300">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
-                            <FolderOpen className="h-4 w-4 text-primary" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-primary">{fakeActiveProjectsCount}</div>
-                            <p className="text-xs text-muted-foreground mt-1">Across all regions</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="glass border-white/10 hover-lift transition-all duration-300 delay-75">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Global Safety Score</CardTitle>
-                            <ShieldCheck className="h-4 w-4 text-green-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-green-500">94/100</div>
-                            <p className="text-xs text-muted-foreground mt-1">+2.1% from last month</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="glass border-white/10 hover-lift transition-all duration-300 delay-100">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Resource Usage</CardTitle>
-                            <Activity className="h-4 w-4 text-primary" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-primary">78%</div>
-                            <p className="text-xs text-muted-foreground mt-1">Optimal efficiency</p>
-                        </CardContent>
-                    </Card>
+                <div className="text-center space-y-2">
+                    <h2 className="text-2xl font-bold">No Project Selected</h2>
+                    <p className="text-muted-foreground max-w-sm">
+                        Go to your Projects page to select a project and view its dashboard.
+                    </p>
                 </div>
-
-                <Card className="glass border-white/10 mt-6">
-                    <CardHeader>
-                        <CardTitle>Recent Project Activity</CardTitle>
-                        <CardDescription>Latest updates from your active construction sites</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {fakeProjects.map((fp) => (
-                                <div key={fp.id} className="flex items-center justify-between border-b border-white/10 pb-4 last:border-0 last:pb-0">
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium leading-none">{fp.name}</p>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                            <span className={fp.status === 'Delayed' ? 'text-destructive' : fp.status === 'Ahead of Schedule' ? 'text-green-500' : 'text-primary'}>
-                                                {fp.status}
-                                            </span>
-                                            <span>•</span>
-                                            <span>Updated {fp.lastUpdated}</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-32 hidden sm:block">
-                                            <Progress value={fp.progress} className="h-2" />
-                                        </div>
-                                        <span className="text-sm font-bold w-12 text-right">{fp.progress}%</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                <Button
+                    className="hover-lift shadow-lg shadow-primary/20"
+                    onClick={onBack}
+                >
+                    <FolderOpen className="mr-2 h-4 w-4" /> View My Projects
+                </Button>
             </div>
         );
     }
 
     const project = projectData;
+
 
     useEffect(() => {
         if (projectData?.id) {
