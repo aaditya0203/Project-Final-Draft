@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 
 // User Schema
+const schemaOptions = { bufferCommands: false };
+
 const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password_hash: { type: String, required: true },
@@ -9,7 +11,7 @@ const userSchema = new mongoose.Schema({
     reset_token: { type: String },
     reset_token_expiry: { type: Date },
     created_at: { type: Date, default: Date.now }
-});
+}, schemaOptions);
 
 // Project Schema
 const projectSchema = new mongoose.Schema({
@@ -20,7 +22,7 @@ const projectSchema = new mongoose.Schema({
     description: { type: String },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
-});
+}, schemaOptions);
 
 // Image Schema
 const imageSchema = new mongoose.Schema({
@@ -29,7 +31,7 @@ const imageSchema = new mongoose.Schema({
     file_name: { type: String, required: true },
     file_size: { type: Number },
     upload_date: { type: Date, default: Date.now }
-});
+}, schemaOptions);
 
 // Analysis Result Schema
 const analysisSchema = new mongoose.Schema({
@@ -42,7 +44,7 @@ const analysisSchema = new mongoose.Schema({
     safety_issues: { type: String }, // JSON string
     weather_conditions: { type: String },
     analyzed_at: { type: Date, default: Date.now }
-});
+}, schemaOptions);
 
 // Progress History Schema
 const progressHistorySchema = new mongoose.Schema({
@@ -50,7 +52,7 @@ const progressHistorySchema = new mongoose.Schema({
     date: { type: String, required: true },
     progress_percentage: { type: Number },
     notes: { type: String }
-});
+}, schemaOptions);
 
 export const User = mongoose.model('User', userSchema);
 export const Project = mongoose.model('Project', projectSchema);

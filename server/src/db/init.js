@@ -4,18 +4,19 @@ async function initDatabase() {
     const connectionString = process.env.DATABASE_URL;
     
     if (!connectionString) {
-        console.warn('⚠️ No DATABASE_URL found, skipping database initialization');
-        return;
+        console.error('❌ FATAL: DATABASE_URL environment variable is not set!');
+        process.exit(1);
     }
 
     try {
-        await mongoose.connect(connectionString);
+        console.log('📡 Connecting to MongoDB...');
+        await mongoose.connect(connectionString, {
+            serverSelectionTimeoutMS: 10000, // 10 second timeout
+        });
         console.log('✅ MongoDB Database connected successfully');
     } catch (error) {
-        console.error('❌ MongoDB Database connection failed:', error);
-        if (process.env.NODE_ENV === 'production') {
-            process.exit(1);
-        }
+        console.error('❌ MongoDB connection failed:', error.message);
+        process.exit(1);
     }
 }
 
