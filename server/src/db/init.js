@@ -1,4 +1,4 @@
-import sqlite3 from 'sqlite3';
+import pg from 'pg';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -6,35 +6,35 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const DB_PATH = process.env.DB_PATH || './data/constructai.db';
-
 async function initDatabase() {
-    try {
-        // Ensure data directory exists
-        const dataDir = path.dirname(DB_PATH);
-        await fs.mkdir(dataDir, { recursive: true });
+    const connectionString = process.env.DATABASE_URL;
+    
+    if (!connectionString) {
+        console.warn('⚠️ No DATABASE_URL found, skipping cloud initialization');
+        return;
+    }
 
-        // Create database connection
-        const db = new sqlite3.Database(DB_PATH);
+    try {
+        const pool = new pg.Pool({
+            connectionString: connectionString,
+            ssl: { rejectUnauthorized: false } // Required for Supabase/Render
+        });
 
         // Read schema file
-        const schemaPath = path.join(__dirname, 'schema.sql');
+        const schemaPath = path.join(__dirname, 'schema_postgres.sql');
         const schema = await fs.readFile(schemaPath, 'utf-8');
 
         // Execute schema
-        await new Promise((resolve, reject) => {
-            db.exec(schema, (err) => {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
+        await pool.query(schema);
 
-        console.log('✅ Database initialized successfully');
-
-        db.close();
+        console.log('✅ PostgreSQL Database initialized successfully');
+        await pool.end();
     } catch (error) {
-        console.error('❌ Database initialization failed:', error);
-        process.exit(1);
+        console.error('❌ PostgreSQL Database initialization failed:', error);
+        // Don't exit if it's just a connection error in dev
+        if (process.env.NODE_ENV === 'production') {
+            process.exit(1);
+        }
     }
 }
 
