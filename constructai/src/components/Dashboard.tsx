@@ -234,36 +234,35 @@ export function Dashboard({ projectData, onBack }: DashboardProps) {
     return (
         <div className="space-y-6 ">
             {/* Header Section */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3">
                     {onBack && (
-                        <Button variant="ghost" size="icon" onClick={onBack} className="hover:bg-secondary/20">
-                            <ArrowLeft className="h-6 w-6" />
+                        <Button variant="ghost" size="icon" onClick={onBack} className="hover:bg-secondary/20 shrink-0">
+                            <ArrowLeft className="h-5 w-5" />
                         </Button>
                     )}
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-gradient-animated">{project.project}</h1>
-                        <div className="flex items-center gap-2 text-muted-foreground mt-1">
+                    <div className="min-w-0">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gradient-animated truncate">{project.project}</h1>
+                        <div className="flex items-center gap-2 text-muted-foreground mt-1 flex-wrap">
                             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 animate-pulse-glow">
                                 {project.stage}
                             </Badge>
-                            <span>•</span>
-                            <span className="flex items-center gap-1">
+                            <span className="flex items-center gap-1 text-sm">
                                 <CloudSun className="h-4 w-4" />
                                 {project.aiAnalysis?.weather || 'Weather N/A'}
                             </span>
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" className="glass hover:bg-white/10" onClick={() => handleExport('excel')}>
-                        <FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel
+                <div className="flex items-center gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" className="glass hover:bg-white/10" onClick={() => handleExport('excel')}>
+                        <FileSpreadsheet className="mr-1.5 h-4 w-4" /> Excel
                     </Button>
-                    <Button variant="outline" className="glass hover:bg-white/10" onClick={() => handleExport('pdf')}>
-                        <FileText className="mr-2 h-4 w-4" /> Export PDF
+                    <Button variant="outline" size="sm" className="glass hover:bg-white/10" onClick={() => handleExport('pdf')}>
+                        <FileText className="mr-1.5 h-4 w-4" /> PDF
                     </Button>
-                    <Button onClick={() => window.location.reload()} className="hover-lift shadow-lg shadow-primary/20">
-                        <RefreshCw className="mr-2 h-4 w-4" /> Refresh Data
+                    <Button size="sm" onClick={() => window.location.reload()} className="hover-lift shadow-lg shadow-primary/20">
+                        <RefreshCw className="mr-1.5 h-4 w-4" /> Refresh
                     </Button>
                 </div>
             </div>
