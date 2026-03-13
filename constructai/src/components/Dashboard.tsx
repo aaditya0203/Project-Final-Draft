@@ -169,7 +169,8 @@ export function Dashboard({ projectData, onBack }: DashboardProps) {
         toast.loading(`Generating ${formatName} report...`, { id: 'export' });
         try {
             const token = localStorage.getItem('auth_token');
-            const response = await fetch(`http://localhost:3002/api/export/${projectData.id}/${format}`, {
+            const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
+            const response = await fetch(`${apiBase}/export/${projectData.id}/${format}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!response.ok) {
