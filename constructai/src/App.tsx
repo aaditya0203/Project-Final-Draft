@@ -11,6 +11,7 @@ import { Navbar } from '@/components/Navbar';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthTransition } from '@/components/AuthTransition';
 import Chatbot from '@/components/Chatbot';
+import { OnboardingTutorial } from '@/components/OnboardingTutorial';
 
 function App() {
   const [view, setView] = useState<string>('welcome');
@@ -186,6 +187,7 @@ function App() {
         currentView={view}
         projectData={projectData}
       />
+      {isAuth && view === 'projects' && <OnboardingTutorial />}
     </AnimatePresence>
   );
 }

@@ -56,6 +56,7 @@ export function Navbar({ currentView, isAuthenticated, onNavigate, onLogout, cla
                     {navItems.map((item) => (
                         <Button
                             key={item.view}
+                            id={item.view === 'projects' ? 'tutorial-projects-list' : item.view === 'upload' ? 'tutorial-upload-btn' : undefined}
                             variant="ghost"
                             onClick={() => handleNavigate(item.view)}
                             className={`hover:bg-primary/10 hover:text-primary transition-colors ${currentView === item.view ? 'bg-primary/10 text-primary' : ''}`}
