@@ -23,8 +23,19 @@ router.post('/ask', async (req, res) => {
         console.log(`📡 AI Request received. Context: ${JSON.stringify(context)}`);
         const genAI = new GoogleGenerativeAI(apiKey);
         
-        // Using 'gemini-1.5-flash' - Stable and fast model
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        // Try primary model: gemini-1.5-flash
+        let modelName = 'gemini-1.5-flash';
+        let model;
+        
+        try {
+            model = genAI.getGenerativeModel({ model: modelName });
+            console.log(`🤖 Using primary model: ${modelName}`);
+        } catch (err) {
+            console.warn(`⚠️ Primary model ${modelName} initialization failed. Trying fallback...`);
+            modelName = 'gemini-pro';
+            model = genAI.getGenerativeModel({ model: modelName });
+            console.log(`🤖 Using fallback model: ${modelName}`);
+        }
 
         // Build a COMPREHENSIVE system prompt to make the AI "Project Specific"
         const systemPrompt = `You are the CONSTRUCTIFY AI ASSISTANT, a specialized expert in construction management and AI-powered site monitoring.
@@ -46,35 +57,48 @@ If the user mentions a project like "${context?.projectName}", acknowledge that 
 
         const prompt = `${systemPrompt}\n\nUser Question: ${message}`;
 
-        const result = await model.generateContent(prompt);
+        let result;
+        try {
+            result = await model.generateContent(prompt);
+        } catch (err) {
+            if (err.status === 404 && modelName !== 'gemini-pro') {
+                console.warn(`⚠️ generateContent failed with 404 for ${modelName}. Attempting second fallback to gemini-pro...`);
+                modelName = 'gemini-pro';
+                model = genAI.getGenerativeModel({ model: modelName });
+                result = await model.generateContent(prompt);
+            } else {
+                throw err;
+            }
+        }
+
         const response = await result.response;
         const text = response.text();
-        console.log(`✅ AI Response generated successfully (${text.substring(0, 20)}...)`);
+        console.log(`✅ AI Response generated successfully via ${modelName} (${text.substring(0, 20)}...)`);
 
         res.json({
             message: text,
             timestamp: new Date().toISOString(),
-            role: 'assistant'
+            role: 'assistant',
+            model: modelName
         });
     } catch (error) {
         console.error('❌ Chatbot Error Details:', {
             status: error.status,
-            message: error.message,
-            stack: error.stack
+            message: error.message
         });
 
         // Categorize common API errors for better user feedback
         let errorMessage = "AI Brain Error: ";
         if (error.status === 403) {
-            errorMessage += "Verification failed (403). Your API key might be restricted. ";
+            errorMessage += "Access Denied (403). Your API key might be restricted or billing isn't linked. ";
         } else if (error.status === 404) {
-            errorMessage += "Model not found (404). This key doesn't support Gemini 2.0 Flash. ";
+            errorMessage += "Model not found (404). This API key might not have access to 'gemini-1.5-flash' yet. ";
         } else {
-            errorMessage += `Something went wrong: ${error.message} `;
+            errorMessage += `Service Error (${error.status || 'Unknown'}): ${error.message} `;
         }
 
         const fallback = getFallbackResponse(req.body.message);
-        fallback.message = errorMessage + " Falling back to assistant mode: " + fallback.message;
+        fallback.message = errorMessage + "\n\n" + fallback.message;
         res.json(fallback);
     }
 });
