@@ -52,7 +52,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ isAuthenticated, currentView, project
         setIsLoading(true);
 
         try {
-            const token = localStorage.getItem('token');
+            const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
+            const token = localStorage.getItem('auth_token');
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json'
             };
@@ -61,7 +62,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ isAuthenticated, currentView, project
                 headers['Authorization'] = `Bearer ${token}`;
             }
 
-            const response = await fetch('http://localhost:3002/api/chatbot/ask', {
+            const response = await fetch(`${apiBase}/chatbot/ask`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
