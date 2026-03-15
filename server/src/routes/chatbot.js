@@ -23,22 +23,26 @@ router.post('/ask', async (req, res) => {
         console.log(`📡 AI Request received. Context: ${JSON.stringify(context)}`);
         const genAI = new GoogleGenerativeAI(apiKey);
         
-        // Try primary model: gemini-1.5-flash
-        let modelName = 'gemini-1.5-flash';
-        let model;
-        
-        try {
-            model = genAI.getGenerativeModel({ model: modelName });
-            console.log(`🤖 Using primary model: ${modelName}`);
-        } catch (err) {
-            console.warn(`⚠️ Primary model ${modelName} initialization failed. Trying fallback...`);
-            modelName = 'gemini-pro';
-            model = genAI.getGenerativeModel({ model: modelName });
-            console.log(`🤖 Using fallback model: ${modelName}`);
-        }
+        // Comprehensive list of fallback models
+        const modelsToTry = [
+            'gemini-1.5-flash',
+            'gemini-1.5-pro',
+            'gemini-pro',
+            'gemini-1.0-pro'
+        ];
 
-        // Build a COMPREHENSIVE system prompt to make the AI "Project Specific"
-        const systemPrompt = `You are the CONSTRUCTIFY AI ASSISTANT, a specialized expert in construction management and AI-powered site monitoring.
+        let result;
+        let successfulModel = '';
+        let lastError = null;
+
+        // Iterative model selection with robust error handling
+        for (const modelName of modelsToTry) {
+            try {
+                console.log(`🤖 Attempting to use model: ${modelName}`);
+                const model = genAI.getGenerativeModel({ model: modelName });
+                
+                // Build a COMPREHENSIVE system prompt
+                const systemPrompt = `You are the CONSTRUCTIFY AI ASSISTANT, a specialized expert in construction management and AI-powered site monitoring.
 
 SESSION CONTEXT:
 - Auth Status: ${context?.isAuthenticated ? 'Logged In' : 'Not Logged In'}
@@ -52,49 +56,55 @@ PROJECT KNOWLEDGE BASE:
 3. Safety Focus: PPE Compliance and Site Hazard Detection.
 
 Your personality: Professional and helpful. 
-IMPORTANT: ${context?.isAuthenticated ? 'The user is ALREADY logged in. Do NOT suggest logging in or creating an account unless they specifically ask how.' : 'The user is not logged in. If they ask about project details, explain they need to log in first.'}
-If the user mentions a project like "${context?.projectName}", acknowledge that you see they are currently viewing it.`;
+IMPORTANT: ${context?.isAuthenticated ? 'The user is ALREADY logged in. Do NOT suggest logging in or creating an account.' : 'The user is not logged in. Tell them to log in for project details.'}`;
 
-        const prompt = `${systemPrompt}\n\nUser Question: ${message}`;
-
-        let result;
-        try {
-            result = await model.generateContent(prompt);
-        } catch (err) {
-            if (err.status === 404 && modelName !== 'gemini-pro') {
-                console.warn(`⚠️ generateContent failed with 404 for ${modelName}. Attempting second fallback to gemini-pro...`);
-                modelName = 'gemini-pro';
-                model = genAI.getGenerativeModel({ model: modelName });
+                const prompt = `${systemPrompt}\n\nUser Question: ${message}`;
+                
                 result = await model.generateContent(prompt);
-            } else {
-                throw err;
+                successfulModel = modelName;
+                console.log(`✅ Success with model: ${modelName}`);
+                break; // Exit loop on first success
+            } catch (err) {
+                lastError = err;
+                const status = err.status || (err.response && err.response.status);
+                const msg = err.message || '';
+                console.warn(`⚠️ Model ${modelName} failed. Status: ${status}, Error: ${msg.substring(0, 100)}`);
+                
+                // If it's a 403 (Permission/Key), don't keep trying other models
+                if (status === 403 || msg.includes('PERMISSION_DENIED') || msg.includes('API_KEY_INVALID')) {
+                    throw err; 
+                }
+                // Otherwise keep trying (404, 500 etc)
             }
+        }
+
+        if (!result) {
+            throw lastError || new Error('All Gemini models failed to initialize');
         }
 
         const response = await result.response;
         const text = response.text();
-        console.log(`✅ AI Response generated successfully via ${modelName} (${text.substring(0, 20)}...)`);
 
         res.json({
             message: text,
             timestamp: new Date().toISOString(),
             role: 'assistant',
-            model: modelName
+            model: successfulModel
         });
     } catch (error) {
-        console.error('❌ Chatbot Error Details:', {
-            status: error.status,
+        const status = error.status || (error.response && error.response.status);
+        console.error('❌ Chatbot Final API Error:', {
+            status,
             message: error.message
         });
 
-        // Categorize common API errors for better user feedback
         let errorMessage = "AI Brain Error: ";
-        if (error.status === 403) {
-            errorMessage += "Access Denied (403). Your API key might be restricted or billing isn't linked. ";
-        } else if (error.status === 404) {
-            errorMessage += "Model not found (404). This API key might not have access to 'gemini-1.5-flash' yet. ";
+        if (status === 403) {
+            errorMessage += "Access Denied (403). Your API key is likely invalid or restricted. Please check Google AI Studio. ";
+        } else if (status === 404) {
+            errorMessage += "Model Not Found (404). Your API key might not have access to Gemini 1.5/Pro yet. ";
         } else {
-            errorMessage += `Service Error (${error.status || 'Unknown'}): ${error.message} `;
+            errorMessage += `Service Error (${status || 'Unknown'}): ${error.message} `;
         }
 
         const fallback = getFallbackResponse(req.body.message);
