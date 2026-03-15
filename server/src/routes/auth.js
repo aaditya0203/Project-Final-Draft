@@ -9,23 +9,42 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // Google Sign-In
 router.post('/google', async (req, res) => {
     try {
-        const { credential, role } = req.body; // credential is the Google ID token
+        const { credential, accessToken, role } = req.body; 
 
-        if (!credential) {
-            return res.status(400).json({ error: 'Google credential is required' });
+        if (!credential && !accessToken) {
+            return res.status(400).json({ error: 'Google credential or access token is required' });
         }
 
-        // Verify the Google token
         let payload;
-        try {
-            const ticket = await client.verifyIdToken({
-                idToken: credential,
-                audience: process.env.GOOGLE_CLIENT_ID,
-            });
-            payload = ticket.getPayload();
-        } catch (error) {
-            console.error('Google token verification failed:', error);
-            return res.status(401).json({ error: 'Invalid Google token' });
+        if (credential) {
+            // Verify the Google ID token
+            try {
+                const ticket = await client.verifyIdToken({
+                    idToken: credential,
+                    audience: process.env.GOOGLE_CLIENT_ID,
+                });
+                payload = ticket.getPayload();
+            } catch (error) {
+                console.error('Google ID token verification failed:', error);
+                return res.status(401).json({ error: 'Invalid Google ID token' });
+            }
+        } else if (accessToken) {
+            // Verify the Access Token
+            try {
+                // We use the token info endpoint for access tokens
+                const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${accessToken}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user info from Google');
+                }
+                payload = await response.json();
+                // Ensure sub exists
+                if (!payload.sub) {
+                    throw new Error('Invalid user info payload');
+                }
+            } catch (error) {
+                console.error('Google access token verification failed:', error);
+                return res.status(401).json({ error: 'Invalid Google access token' });
+            }
         }
 
         const { email, name, sub: googleId } = payload;

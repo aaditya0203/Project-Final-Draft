@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { HardHat } from 'lucide-react';
-import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
+import { GoogleLogin, useGoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import api from '@/services/api';
 import { toast } from 'sonner';
 
@@ -17,7 +17,7 @@ export function AuthScreen({ onLoginSuccess, onBack }: AuthScreenProps) {
         setIsLoading(true);
         try {
             if (credentialResponse.credential) {
-                await api.googleLogin(credentialResponse.credential);
+                await api.googleLogin({ credential: credentialResponse.credential });
                 toast.success('Successfully signed in!');
                 onLoginSuccess();
             } else {
@@ -31,6 +31,25 @@ export function AuthScreen({ onLoginSuccess, onBack }: AuthScreenProps) {
             setIsLoading(false);
         }
     };
+
+    const handleCustomLogin = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            setIsLoading(true);
+            try {
+                await api.googleLogin({ accessToken: tokenResponse.access_token });
+                toast.success('Successfully signed in with new account!');
+                onLoginSuccess();
+            } catch (error: any) {
+                toast.error('Account Selection Failed', { 
+                    description: error.message || 'Could not authenticate with chosen account.' 
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        onError: () => toast.error('Account Selection failed'),
+        prompt: 'select_account'
+    });
 
     return (
         <motion.div
@@ -109,18 +128,29 @@ export function AuthScreen({ onLoginSuccess, onBack }: AuthScreenProps) {
                                     transition={{ delay: 1.2 }}
                                     className="hover-lift w-full flex justify-center"
                                 >
-                                    <GoogleLogin
-                                        onSuccess={handleGoogleSuccess}
-                                        onError={() => {
-                                            toast.error('Google Sign-In failed');
-                                        }}
-                                        useOneTap
-                                        context="use"
-                                        theme="filled_black"
-                                        shape="pill"
-                                        size="large"
-                                        width="320"
-                                    />
+                                    <div className="flex flex-col items-center w-full gap-4">
+                                        <GoogleLogin
+                                            onSuccess={handleGoogleSuccess}
+                                            onError={() => {
+                                                toast.error('Google Sign-In failed');
+                                            }}
+                                            useOneTap
+                                            context="use"
+                                            theme="filled_black"
+                                            shape="pill"
+                                            size="large"
+                                            width="320"
+                                        />
+                                        <motion.button
+                                            type="button"
+                                            onClick={() => handleCustomLogin()}
+                                            className="text-sm font-semibold text-primary hover:underline underline-offset-4 decoration-2"
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            Use Another Account
+                                        </motion.button>
+                                    </div>
                                 </motion.div>
                             )}
                         </div>
@@ -129,6 +159,7 @@ export function AuthScreen({ onLoginSuccess, onBack }: AuthScreenProps) {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 1.4 }}
+                            className="flex flex-col items-center gap-4"
                         >
                             <button
                                 type="button"
