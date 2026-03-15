@@ -5,7 +5,8 @@ const schemaOptions = { bufferCommands: false };
 
 const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
-    password_hash: { type: String, required: true },
+    password_hash: { type: String, required: false }, // Optional for Google users
+    google_id: { type: String },
     name: { type: String },
     role: { type: String, default: 'user' },
     reset_token: { type: String },

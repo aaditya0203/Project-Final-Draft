@@ -3,9 +3,7 @@ import { UploadSection } from '@/components/UploadSection';
 import { Dashboard } from '@/components/Dashboard';
 import { ProjectsList } from '@/components/ProjectsList';
 import { Welcome } from '@/components/Welcome';
-import { Login } from '@/components/Login';
-import { Signup } from '@/components/Signup';
-import { ResetPassword } from '@/components/ResetPassword';
+import { AuthScreen } from '@/components/AuthScreen';
 import { About } from '@/components/About';
 import { TrainingPage } from '@/components/TrainingPage';
 import { Navbar } from '@/components/Navbar';
@@ -18,13 +16,6 @@ function App() {
   const [view, setView] = useState<string>('welcome');
   const [isAuth, setIsAuth] = useState(false);
   const [projectData, setProjectData] = useState<any>(null);
-
-  // Check for reset password URL
-  useState(() => {
-    if (window.location.pathname === '/reset-password') {
-      setView('reset-password');
-    }
-  });
 
   const handleUploadComplete = (data: any) => {
     setProjectData(data);
@@ -75,7 +66,7 @@ function App() {
 
   const ensureAuth = (target: 'upload' | 'projects') => {
     if (!isAuth) {
-      setView('login');
+      setView('auth');
     } else {
       setView(target);
     }
@@ -129,7 +120,7 @@ function App() {
       {view === 'welcome' && (
         <AuthTransition>
           <Welcome
-            onGetStarted={() => setView('login')}
+            onGetStarted={() => setView('auth')}
             currentView={view}
             isAuthenticated={isAuth}
             onNavigate={(v) => {
@@ -143,39 +134,14 @@ function App() {
           />
         </AuthTransition>
       )}
-      {view === 'login' && (
+      {view === 'auth' && (
         <AuthTransition>
-          <Login
+          <AuthScreen
             onLoginSuccess={() => {
               setIsAuth(true);
               setView('projects');
             }}
-            onSwitchToSignup={() => setView('signup')}
             onBack={() => setView('welcome')}
-          />
-        </AuthTransition>
-      )}
-      {view === 'signup' && (
-        <AuthTransition>
-          <Signup
-            onSignupSuccess={() => {
-              setIsAuth(true);
-              setView('projects');
-            }}
-            onSwitchToLogin={() => setView('login')}
-            onBack={() => setView('welcome')}
-          />
-        </AuthTransition>
-      )}
-
-      {view === 'reset-password' && (
-        <AuthTransition>
-          <ResetPassword
-            onSuccess={() => {
-              setView('login');
-              // Clear URL
-              window.history.pushState({}, '', '/');
-            }}
           />
         </AuthTransition>
       )}

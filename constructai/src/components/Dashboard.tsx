@@ -36,9 +36,9 @@ export function Dashboard({ projectData, isAuthenticated, onBack }: DashboardPro
                         <FolderOpen className="h-16 w-16 text-primary" />
                     </div>
                     <div className="text-center space-y-2">
-                        <h2 className="text-2xl font-bold">No Project Selected</h2>
+                        <h2 className="text-2xl font-bold">Welcome back!</h2>
                         <p className="text-muted-foreground max-w-sm">
-                            Go to your Projects page to select a project and view its dashboard.
+                            Click 'View My Projects' to select a project, or scroll down to see your global dashboard overview.
                         </p>
                     </div>
                     <Button className="hover-lift shadow-lg shadow-primary/20" onClick={onBack}>
@@ -48,7 +48,7 @@ export function Dashboard({ projectData, isAuthenticated, onBack }: DashboardPro
             );
         }
 
-        // Guest/demo users: show fake overview
+        // Show the global overview dashboard for both guest and authenticated users without a specific project
         const fakeActiveProjectsCount = 8;
         const fakeProjects = [
             { id: 0, name: 'Skyline Tower Block A', progress: 72, status: 'On Track', lastUpdated: '2 hours ago' },

@@ -2,8 +2,8 @@ import { User, Project, Image, Analysis, ProgressHistory } from './models.js';
 
 class Database {
     // User operations
-    async createUser(email, passwordHash, name, role = 'user') {
-        const user = new User({ email, password_hash: passwordHash, name, role });
+    async createUser(email, passwordHash, name, role = 'user', googleId = null) {
+        const user = new User({ email, password_hash: passwordHash, google_id: googleId, name, role });
         await user.save();
         return user._id.toString();
     }

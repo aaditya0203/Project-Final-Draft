@@ -49,36 +49,13 @@ class ApiClient {
     }
 
     // Auth endpoints
-    async register(email: string, password: string, name?: string, role?: string) {
-        const data = await this.request('/auth/register', {
+    async googleLogin(credential: string, role?: string) {
+        const data = await this.request('/auth/google', {
             method: 'POST',
-            body: JSON.stringify({ email, password, name, role }),
+            body: JSON.stringify({ credential, role }),
         });
         if (data.token) this.setToken(data.token);
         return data;
-    }
-
-    async login(email: string, password: string, role?: string) {
-        const data = await this.request('/auth/login', {
-            method: 'POST',
-            body: JSON.stringify({ email, password, role }),
-        });
-        if (data.token) this.setToken(data.token);
-        return data;
-    }
-
-    async forgotPassword(email: string) {
-        return this.request('/auth/forgot-password', {
-            method: 'POST',
-            body: JSON.stringify({ email }),
-        });
-    }
-
-    async resetPassword(token: string, newPassword: string) {
-        return this.request('/auth/reset-password', {
-            method: 'POST',
-            body: JSON.stringify({ token, newPassword }),
-        });
     }
 
     // Project endpoints

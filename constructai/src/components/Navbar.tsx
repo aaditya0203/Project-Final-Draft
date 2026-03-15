@@ -85,8 +85,7 @@ export function Navbar({ currentView, isAuthenticated, onNavigate, onLogout, cla
                         </Dialog>
                     ) : (
                         <>
-                            <Button variant="ghost" onClick={() => handleNavigate('login')} className="hover:bg-primary/10 hover:text-primary">Login</Button>
-                            <Button variant="ghost" onClick={() => handleNavigate('signup')} className="hover:bg-primary/10 hover:text-primary">Sign Up</Button>
+                            <Button variant="ghost" onClick={() => handleNavigate('auth')} className="hover:bg-primary/10 hover:text-primary">Sign In</Button>
                         </>
                     )}
                 </nav>
@@ -127,8 +126,7 @@ export function Navbar({ currentView, isAuthenticated, onNavigate, onLogout, cla
                             </button>
                         ) : (
                             <>
-                                <button onClick={() => handleNavigate('login')} className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-white/10 transition-colors">Login</button>
-                                <button onClick={() => handleNavigate('signup')} className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-white/10 transition-colors">Sign Up</button>
+                                <button onClick={() => handleNavigate('auth')} className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-white/10 transition-colors">Sign In</button>
                             </>
                         )}
                     </div>
