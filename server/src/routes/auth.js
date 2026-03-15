@@ -35,7 +35,11 @@ router.post('/google', async (req, res) => {
             // Verify the Access Token
             try {
                 // We use the token info endpoint for access tokens
-                const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${accessToken}`);
+                const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
                 if (!response.ok) {
                     const errorData = await response.text();
                     console.error('[Auth] Google userinfo fetch failed:', response.status, errorData);
