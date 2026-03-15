@@ -12,7 +12,6 @@ import authRoutes from './routes/auth.js';
 import projectRoutes from './routes/projects.js';
 import imageRoutes from './routes/images.js';
 import exportRoutes from './routes/export.js';
-import chatbotRoutes from './routes/chatbot.js';
 
 // Import services
 import imageAnalysis from './services/imageAnalysis.js';
@@ -45,7 +44,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/images', imageRoutes);
 app.use('/api/export', exportRoutes);
-app.use('/api/chatbot', chatbotRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

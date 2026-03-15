@@ -10,7 +10,6 @@ import { Navbar } from '@/components/Navbar';
 // Removed unused Signout import
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthTransition } from '@/components/AuthTransition';
-import Chatbot from '@/components/Chatbot';
 import { OnboardingTutorial } from '@/components/OnboardingTutorial';
 
 function App() {
@@ -182,12 +181,7 @@ function App() {
           <TrainingPage onBack={() => setView('dashboard')} />
         </AuthenticatedLayout>
       )}
-      <Chatbot
-        isAuthenticated={isAuth}
-        currentView={view}
-        projectData={projectData}
-      />
-      {isAuth && view === 'projects' && <OnboardingTutorial />}
+      <OnboardingTutorial />
     </AnimatePresence>
   );
 }
