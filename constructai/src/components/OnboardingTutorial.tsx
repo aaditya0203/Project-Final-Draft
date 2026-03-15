@@ -90,7 +90,7 @@ export function OnboardingTutorial() {
 
                     <button 
                         onClick={handleComplete}
-                        className="absolute top-4 right-4 p-2 text-white/40 hover:text-white transition-colors"
+                        className="absolute top-4 right-4 p-2 text-black/30 hover:text-black transition-colors"
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -101,30 +101,30 @@ export function OnboardingTutorial() {
                                 <Icon className="h-8 w-8 text-primary" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-2xl font-bold text-white tracking-tight leading-tight">
+                                <h3 className="text-2xl font-bold text-black tracking-tight leading-tight">
                                     {step.title}
                                 </h3>
-                                <p className="text-sm text-primary font-semibold uppercase tracking-wider">
+                                <p className="text-sm text-primary font-bold uppercase tracking-wider">
                                     Step {currentStep + 1} of {STEPS.length}
                                 </p>
                             </div>
                         </div>
 
-                        <p className="text-xl text-white font-medium leading-relaxed min-h-[100px]">
+                        <p className="text-xl text-zinc-800 font-medium leading-relaxed min-h-[100px]">
                             {step.description}
                         </p>
 
                         <div className="flex items-center justify-between pt-4">
                             <Button 
                                 variant="ghost" 
-                                className="text-white/60 hover:text-white hover:bg-white/5 transition-all"
+                                className="text-black/50 hover:text-black hover:bg-black/5 transition-all"
                                 onClick={handleComplete}
                             >
                                 Skip Tour
                             </Button>
                             <Button 
                                 onClick={handleNext}
-                                className="rounded-full px-8 h-12 shadow-xl shadow-primary/30 hover:shadow-primary/40 transition-all font-bold text-base"
+                                className="rounded-full px-8 h-12 shadow-xl shadow-primary/30 hover:shadow-primary/40 transition-all font-bold text-base bg-black text-white"
                             >
                                 {currentStep === STEPS.length - 1 ? "Get Started" : "Continue"}
                                 <ChevronRight className="ml-2 h-5 w-5" />
