@@ -15,6 +15,7 @@ export function AuthScreen({ onLoginSuccess, onBack }: AuthScreenProps) {
 
     const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
         setIsLoading(true);
+        console.log('[Auth] Google Login Component Success:', credentialResponse);
         try {
             if (credentialResponse.credential) {
                 await api.googleLogin({ credential: credentialResponse.credential });
@@ -24,6 +25,7 @@ export function AuthScreen({ onLoginSuccess, onBack }: AuthScreenProps) {
                 toast.error('Google Sign-In failed', { description: 'No credential received from Google.' });
             }
         } catch (error: any) {
+            console.error('[Auth] Login Error:', error);
             toast.error('Authentication Failed', { 
                 description: error.message || 'Could not authenticate with our servers.' 
             });
@@ -35,11 +37,13 @@ export function AuthScreen({ onLoginSuccess, onBack }: AuthScreenProps) {
     const handleCustomLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             setIsLoading(true);
+            console.log('[Auth] Custom Login Hook Success:', tokenResponse);
             try {
                 await api.googleLogin({ accessToken: tokenResponse.access_token });
                 toast.success('Successfully signed in with new account!');
                 onLoginSuccess();
             } catch (error: any) {
+                console.error('[Auth] Custom Login Error:', error);
                 toast.error('Account Selection Failed', { 
                     description: error.message || 'Could not authenticate with chosen account.' 
                 });
@@ -47,8 +51,12 @@ export function AuthScreen({ onLoginSuccess, onBack }: AuthScreenProps) {
                 setIsLoading(false);
             }
         },
-        onError: () => toast.error('Account Selection failed'),
-        prompt: 'select_account'
+        onError: (error) => {
+            console.error('[Auth] Custom Login Error:', error);
+            toast.error('Account Selection failed');
+        },
+        prompt: 'select_account',
+        scope: 'email profile openid'
     });
 
     return (
