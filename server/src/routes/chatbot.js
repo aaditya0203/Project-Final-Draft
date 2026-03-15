@@ -22,9 +22,9 @@ router.post('/ask', async (req, res) => {
 
         console.log(`📡 AI Request received. Context: ${JSON.stringify(context)}`);
         const genAI = new GoogleGenerativeAI(apiKey);
-
-        // Using 'gemini-2.5-flash' - Verified as working for this specific API key
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        
+        // Using 'gemini-1.5-flash' - Stable and fast model
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
         // Build a COMPREHENSIVE system prompt to make the AI "Project Specific"
         const systemPrompt = `You are the CONSTRUCTIFY AI ASSISTANT, a specialized expert in construction management and AI-powered site monitoring.
